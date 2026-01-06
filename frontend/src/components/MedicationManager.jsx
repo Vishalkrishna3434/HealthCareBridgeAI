@@ -73,23 +73,22 @@ export default function MedicationManager() {
                 </p>
             </div>
 
-            <div className="grid grid-2">
-                {/* Medication List */}
-                <div className="card">
+            <div className="grid grid-2" style={{ gap: '2rem' }}>
+                <div className="glass-card" style={{ padding: '2rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
                         <h3 style={{ margin: 0 }}>Current Medications</h3>
                         <button
                             onClick={() => setShowAddForm(!showAddForm)}
-                            className="btn btn-primary"
+                            className="btn-primary"
                         >
-                            {showAddForm ? '✕ Cancel' : '➕ Add Medication'}
+                            {showAddForm ? 'Cancel' : 'Add Medication'}
                         </button>
                     </div>
 
                     {showAddForm && (
-                        <form onSubmit={handleAddMedication} className="fade-in" style={{ marginBottom: 'var(--space-lg)', padding: 'var(--space-lg)', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
+                        <form onSubmit={handleAddMedication} className="form-container fade-in" style={{ marginBottom: '2rem', padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '1.5rem', border: '1px solid var(--glass-border)' }}>
                             <div className="form-group">
-                                <label htmlFor="medName">Medication Name *</label>
+                                <label htmlFor="medName">Medication Name</label>
                                 <input
                                     id="medName"
                                     type="text"
@@ -101,7 +100,7 @@ export default function MedicationManager() {
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="dosage">Dosage *</label>
+                                <label htmlFor="dosage">Dosage</label>
                                 <input
                                     id="dosage"
                                     type="text"
@@ -113,7 +112,7 @@ export default function MedicationManager() {
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="frequency">Frequency *</label>
+                                <label htmlFor="frequency">Frequency</label>
                                 <input
                                     id="frequency"
                                     type="text"
@@ -126,17 +125,10 @@ export default function MedicationManager() {
 
                             <button
                                 type="submit"
-                                className="btn btn-primary"
+                                className="btn-primary"
                                 disabled={loading}
                             >
-                                {loading ? (
-                                    <>
-                                        <span className="spinner"></span>
-                                        Adding...
-                                    </>
-                                ) : (
-                                    'Add Medication'
-                                )}
+                                {loading ? 'Adding...' : 'Save Medication'}
                             </button>
                         </form>
                     )}
@@ -163,27 +155,27 @@ export default function MedicationManager() {
                                                 <strong>Frequency:</strong> {med.frequency}
                                             </p>
 
-                                            <div style={{ display: 'flex', gap: 'var(--space-sm)', flexWrap: 'wrap' }}>
+                                            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                                                 <button
                                                     onClick={() => logAdherence(med.id, 'taken')}
-                                                    className="btn btn-primary"
-                                                    style={{ fontSize: '0.75rem', padding: 'var(--space-xs) var(--space-sm)' }}
+                                                    className="tab-button active"
+                                                    style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}
                                                 >
                                                     ✓ Taken
                                                 </button>
                                                 <button
                                                     onClick={() => logAdherence(med.id, 'skipped')}
-                                                    className="btn btn-secondary"
-                                                    style={{ fontSize: '0.75rem', padding: 'var(--space-xs) var(--space-sm)' }}
+                                                    className="tab-button"
+                                                    style={{ fontSize: '0.8rem', padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)' }}
                                                 >
                                                     ⊘ Skipped
                                                 </button>
                                                 <button
                                                     onClick={() => deleteMedication(med.id)}
-                                                    className="btn btn-secondary"
-                                                    style={{ fontSize: '0.75rem', padding: 'var(--space-xs) var(--space-sm)', marginLeft: 'auto' }}
+                                                    className="tab-button"
+                                                    style={{ fontSize: '0.8rem', padding: '0.5rem 1rem', marginLeft: 'auto', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.2)' }}
                                                 >
-                                                    🗑️ Delete
+                                                    🗑️
                                                 </button>
                                             </div>
                                         </div>
@@ -201,7 +193,7 @@ export default function MedicationManager() {
                 </div>
 
                 {/* Adherence Tracking */}
-                <div className="card">
+                <div className="glass-card" style={{ padding: '2rem' }}>
                     <h3 style={{ marginBottom: 'var(--space-lg)' }}>Adherence Overview</h3>
 
                     <div style={{ marginBottom: 'var(--space-xl)' }}>

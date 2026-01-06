@@ -159,7 +159,7 @@ Prescribed Lisinopril 10mg daily and Aspirin 81mg daily."
                                                 <div key={i} className="result-item">
                                                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                         <strong>{cond.clinical_text}</strong>
-                                                        <span className="badge badge-success">{cond.confidence}%</span>
+                                                        <span className="badge badge-success">{cond.confidence}% Match</span>
                                                     </div>
                                                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                                         {cond.icd_10} | {cond.severity}
@@ -179,7 +179,7 @@ Prescribed Lisinopril 10mg daily and Aspirin 81mg daily."
                                                 <div key={i} className="result-item">
                                                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                         <strong>{med.drug_name}</strong>
-                                                        <span className="badge badge-success">{med.confidence}%</span>
+                                                        <span className="badge badge-success">{med.confidence}% Match</span>
                                                     </div>
                                                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                                         {med.dosage} {med.frequency}
@@ -225,14 +225,7 @@ Prescribed Lisinopril 10mg daily and Aspirin 81mg daily."
                             <div style={{ marginBottom: 'var(--space-lg)' }}>
                                 <h4>FHIR R4 Bundle (Interoperability)</h4>
                                 <div className="result-item">
-                                    <pre style={{
-                                        overflowX: 'auto',
-                                        fontSize: '0.75rem',
-                                        color: 'var(--text-secondary)',
-                                        maxHeight: '200px',
-                                        background: 'var(--bg-secondary)',
-                                        padding: 'var(--space-md)'
-                                    }}>
+                                    <pre>
                                         {JSON.stringify(result.fhir_resources, null, 2)}
                                     </pre>
                                 </div>

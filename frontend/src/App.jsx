@@ -39,11 +39,11 @@ function App() {
   }, [])
 
   const tabs = [
-    { id: 'dashboard', label: '🏠 Dashboard', component: Dashboard },
-    { id: 'clinical', label: '📝 Clinical Notes', component: ClinicalNoteAnalyzer },
-    { id: 'prescription', label: '💊 Prescription Scanner', component: PrescriptionScanner },
-    { id: 'interactions', label: '⚠️ Drug Interactions', component: DrugInteractionChecker },
-    { id: 'medications', label: '📋 Medications', component: MedicationManager }
+    { id: 'dashboard', label: 'Executive Overview', component: Dashboard },
+    { id: 'clinical', label: 'Clinical Intelligence', component: ClinicalNoteAnalyzer },
+    { id: 'prescription', label: 'Smart Scanner', component: PrescriptionScanner },
+    { id: 'interactions', label: 'Safety Guard', component: DrugInteractionChecker },
+    { id: 'medications', label: 'Patient Care', component: MedicationManager }
   ]
 
   const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component || Dashboard
