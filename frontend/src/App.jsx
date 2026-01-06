@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { api } from './api'
 import './App.css'
 import config from './config'
 import Dashboard from './components/Dashboard'
@@ -16,24 +17,18 @@ function App() {
   })
 
   // Check service health on mount
-  useState(() => {
+  useEffect(() => {
     const checkServices = async () => {
-      try {
-        const checks = await Promise.allSettled([
-          fetch(`${config.PATIENT_SERVICE_URL}/health`).then(r => r.json()),
-          fetch(`${config.CLINICAL_SERVICE_URL}/health`).then(r => r.json()),
-          fetch(`${config.AI_SERVICE_URL}/health`).then(r => r.json())
-        ])
+      const services = ['patient', 'clinical', 'ai'];
+      const results = {};
 
-        setServiceStatus({
-          patient: checks[0].status === 'fulfilled' ? 'healthy' : 'error',
-          clinical: checks[1].status === 'fulfilled' ? 'healthy' : 'error',
-          ai: checks[2].status === 'fulfilled' ? 'healthy' : 'error'
-        })
-      } catch (error) {
-        console.error('Service check failed:', error)
+      for (const service of services) {
+        const status = await api.checkHealth(service);
+        results[service] = status.status === 'healthy' ? 'healthy' : 'error';
       }
-    }
+
+      setServiceStatus(results);
+    };
 
     checkServices()
   }, [])

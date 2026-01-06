@@ -80,6 +80,14 @@ async def add_medication(med: Medication):
     db.medications.append(med_dict)
     return {"status": "success", "data": med_dict}
 
+@app.delete("/api/medications/{med_id}")
+async def delete_medication(med_id: str):
+    initial_len = len(db.medications)
+    db.medications = [m for m in db.medications if m["id"] != med_id]
+    if len(db.medications) == initial_len:
+        raise HTTPException(status_code=404, detail="Medication not found")
+    return {"status": "success"}
+
 @app.post("/api/adherence")
 async def log_adherence(data: Dict[str, Any]):
     db.adherence.append(data)

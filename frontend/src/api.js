@@ -42,6 +42,7 @@ export const api = {
     // Patient Service
     getMedications: () => apiRequest('patient', '/medications'),
     addMedication: (data) => apiRequest('patient', '/medications', { method: 'POST', body: JSON.stringify(data) }),
+    deleteMedication: (id) => apiRequest('patient', `/medications/${id}`, { method: 'DELETE' }),
     logAdherence: (data) => apiRequest('patient', '/adherence', { method: 'POST', body: JSON.stringify(data) }),
 
     // AI Service

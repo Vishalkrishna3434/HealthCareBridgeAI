@@ -66,10 +66,16 @@ export default function MedicationManager() {
     const deleteMedication = async (medId) => {
         if (!window.confirm('Are you sure you want to remove this medication?')) return
 
-        // In this consolidated demo, we'll just filter locally for now 
-        // as the backend MockDB doesn't have a DELETE endpoint yet.
-        // But let's show the intent.
-        setMedications(medications.filter(med => med.id !== medId))
+        setLoading(true)
+        setError(null)
+        try {
+            await api.deleteMedication(medId)
+            await loadMedications()
+        } catch (err) {
+            setError('Failed to delete medication: ' + err.message)
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
