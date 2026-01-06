@@ -127,13 +127,46 @@ async def scan_prescription(file: UploadFile = File(...)):
         "status": "Success"
     })
     
-    return {
-        "medications": [
-            {"name": "Amoxicillin", "dosage": "500mg", "frequency": "Every 8 hours", "duration": "7 days"},
-            {"name": "Ibuprofen", "dosage": "400mg", "frequency": "As needed", "duration": "5 days"}
-        ],
-        "raw_text": "Amoxicillin 500mg - 1 tab TID x 7d. Ibuprofen 400mg PRN pain."
-    }
+    if not api_key:
+        return {
+            "medications": [
+                {"name": "Amoxicillin", "dosage": "500mg", "frequency": "Every 8 hours", "duration": "7 days"},
+                {"name": "Ibuprofen", "dosage": "400mg", "frequency": "As needed", "duration": "5 days"}
+            ],
+            "raw_text": "DEMO MODE: Amoxicillin 500mg - 1 tab TID x 7d. Ibuprofen 400mg PRN pain."
+        }
+    
+    try:
+        content = await file.read()
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        prompt = """
+        Analyze this prescription image. 
+        1. Extract all medications with their dosage, frequency, and duration.
+        2. Provide a raw transcription of the relevant text.
+        
+        Return the result in valid JSON format:
+        {
+            "medications": [
+                {"name": "...", "dosage": "...", "frequency": "...", "duration": "..."}
+            ],
+            "raw_text": "..."
+        }
+        """
+        
+        response = model.generate_content([
+            prompt,
+            {"mime_type": file.content_type, "data": content}
+        ])
+        
+        text = response.text
+        if "```json" in text:
+            text = text.split("```json")[1].split("```")[0]
+        
+        return json.loads(text.strip())
+    except Exception as e:
+        print(f"Error in scan_prescription: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to scan prescription: {str(e)}")
 
 @app.post("/api/check-interactions")
 async def check_interactions(req: MedicationsRequest):

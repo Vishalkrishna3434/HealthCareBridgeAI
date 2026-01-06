@@ -5,21 +5,36 @@ const apiRequest = async (service, endpoint, options = {}) => {
     const url = `${baseUrl}${endpoint}`;
 
     const headers = {
-        'Content-Type': 'application/json',
         'Authorization': 'Bearer valid_token',
         ...options.headers,
     };
 
+    if (!(options.body instanceof FormData)) {
+        headers['Content-Type'] = 'application/json';
+    }
+
     try {
         const response = await fetch(url, { ...options, headers });
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.detail || `Request failed with status ${response.status}`);
+            let errorMessage;
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.detail || errorData.message || JSON.stringify(errorData);
+            } catch (e) {
+                errorMessage = await response.text().catch(() => `Request failed with status ${response.status}`);
+            }
+
+            if (typeof errorMessage === 'object') {
+                errorMessage = JSON.stringify(errorMessage);
+            }
+            throw new Error(errorMessage);
         }
         return await response.json();
     } catch (error) {
-        console.error(`API Error (${service}):`, error.message);
-        throw error;
+        console.error(`API Error (${service}):`, error);
+        // Ensure we throw an Error object with a string message
+        if (error instanceof Error) throw error;
+        throw new Error(typeof error === 'string' ? error : JSON.stringify(error));
     }
 };
 
