@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import '../App.css'
 
 export default function Dashboard() {
     const [stats, setStats] = useState({
@@ -8,7 +9,6 @@ export default function Dashboard() {
         interactionsChecked: 534
     })
 
-    // Simulate "Live" updates
     useEffect(() => {
         const interval = setInterval(() => {
             setStats(prev => ({
@@ -23,126 +23,149 @@ export default function Dashboard() {
     const features = [
         {
             id: 'clinical',
-            icon: '📝',
+            icon: '󰈙',
             title: 'Clinical Intelligence',
             description: 'Advanced NLP for medical entity extraction, de-identification, and FHIR mapping.',
-            color: 'var(--primary-500)',
+            gradient: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
             tags: ['Gemini 1.5 Pro', 'HIPAA']
         },
         {
             id: 'prescription',
-            icon: '💊',
+            icon: '󰚞',
             title: 'Prescription OCR',
             description: 'Convert handwritten or printed prescriptions into structured digital records.',
-            color: 'var(--success-500)',
+            gradient: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)',
             tags: ['Vision API', 'OCR']
         },
         {
             id: 'interactions',
-            icon: '⚠️',
+            icon: '󰦀',
             title: 'Safety Guardian',
             description: 'Automated drug-drug interaction detection and clinical decision support.',
-            color: 'var(--warning-500)',
+            gradient: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
             tags: ['Real-time', 'Safety']
         },
         {
             id: 'medications',
-            icon: '📋',
+            icon: '󰅖',
             title: 'Patient Adherence',
             description: 'Personalized coaching and adherence tracking for better health outcomes.',
-            color: 'var(--danger-500)',
+            gradient: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)',
             tags: ['Coaching', 'Tracking']
         }
     ]
 
     return (
-        <div className="fade-in">
-            <div className="page-header" style={{ position: 'relative' }}>
-                <h1 className="page-title">HealthBridge Executive Suite</h1>
-                <p className="page-description">
-                    Enterprise-grade clinical intelligence for modern healthcare systems
+        <div className="fade-in" style={{ paddingBottom: '4rem' }}>
+            <div className="page-header" style={{ marginBottom: '4rem' }}>
+                <h1 className="page-title" style={{ fontSize: '3.5rem', fontWeight: 800, marginBottom: '1rem' }}>
+                    HealthBridge <span className="text-gradient">AI Suite</span>
+                </h1>
+                <p className="page-description" style={{ fontSize: '1.2rem', color: 'var(--text-dim)', maxWidth: '800px' }}>
+                    Next-generation clinical intelligence powered by multi-modal AI agents.
+                    Transforming raw healthcare narratives into actionable FHIR insights.
                 </p>
-                <div style={{ position: 'absolute', top: 0, right: 0 }}>
-                    <span className="badge badge-success" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div className="status-dot healthy" style={{ width: '8px', height: '8px' }}></div>
-                        Network Online
-                    </span>
-                </div>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-4" style={{ marginBottom: 'var(--space-2xl)' }}>
-                <div className="card" style={{ textAlign: 'center', borderTop: '4px solid var(--primary-500)' }}>
-                    <h3 style={{ fontSize: '2rem', margin: 0 }}>{stats.totalPatients}</h3>
-                    <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.8 }}>Total Patients</p>
-                </div>
-
-                <div className="card" style={{ textAlign: 'center', borderTop: '4px solid var(--success-500)' }}>
-                    <h3 style={{ fontSize: '2rem', margin: 0 }}>{stats.notesAnalyzed}</h3>
-                    <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.8 }}>Notes Analyzed</p>
-                </div>
-
-                <div className="card" style={{ textAlign: 'center', borderTop: '4px solid var(--warning-500)' }}>
-                    <h3 style={{ fontSize: '2rem', margin: 0 }}>{stats.interactionsChecked}</h3>
-                    <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.8 }}>Safety Checks</p>
-                </div>
-
-                <div className="card" style={{ textAlign: 'center', borderTop: '4px solid var(--danger-500)' }}>
-                    <h3 style={{ fontSize: '2rem', margin: 0 }}>{stats.prescriptionsScanned}</h3>
-                    <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.8 }}>Docs Digitiized</p>
-                </div>
-            </div>
-
-            {/* Feature Cards */}
-            <div className="grid grid-2">
-                {features.map((feature, index) => (
-                    <div
-                        key={feature.id}
-                        className="card fade-in"
-                        style={{
-                            animationDelay: `${index * 100}ms`,
-                            display: 'flex',
-                            gap: 'var(--space-lg)'
-                        }}
-                    >
-                        <div style={{ fontSize: '2.5rem' }}>{feature.icon}</div>
-                        <div>
-                            <h3 style={{ marginBottom: 'var(--space-xs)' }}>{feature.title}</h3>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 'var(--space-md)' }}>
-                                {feature.description}
-                            </p>
-                            <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
-                                {feature.tags.map(tag => (
-                                    <span key={tag} style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: 'var(--primary-500)' }}>
-                                        #{tag}
-                                    </span>
-                                ))}
-                            </div>
+            {/* Stats Row */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gap: '2rem',
+                marginBottom: '4rem'
+            }}>
+                {[
+                    { label: 'Active Patients', val: stats.totalPatients, color: 'var(--primary)' },
+                    { label: 'Clinical Analyses', val: stats.notesAnalyzed, color: 'var(--secondary)' },
+                    { label: 'Safety Validations', val: stats.interactionsChecked, color: 'var(--warning)' },
+                    { label: 'Documents Processed', val: stats.prescriptionsScanned, color: 'var(--accent)' }
+                ].map((stat, i) => (
+                    <div key={i} className="glass-card" style={{ padding: '2rem', textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
+                        <div style={{ color: stat.color, fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>
+                            {stat.label}
+                        </div>
+                        <div style={{ fontSize: '2.5rem', fontWeight: 800, fontFamily: 'Outfit' }}>
+                            {stat.val.toLocaleString()}
                         </div>
                     </div>
                 ))}
             </div>
 
-            {/* System Monitor */}
-            <div className="card" style={{ marginTop: 'var(--space-2xl)', background: 'linear-gradient(rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9))' }}>
-                <h3 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    System Health Monitor
-                    <span style={{ fontSize: '0.8rem', color: 'var(--success-500)' }}>99.9% Uptime</span>
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-xl)', marginTop: 'var(--space-lg)' }}>
-                    <div style={{ borderLeft: '2px solid var(--glass-border)', paddingLeft: 'var(--space-md)' }}>
-                        <p style={{ margin: 0, fontSize: '0.8rem' }}>Patient Cluster</p>
-                        <div className="badge badge-success">Nominal</div>
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+                gap: '2rem'
+            }}>
+                {features.map((feature, index) => (
+                    <div
+                        key={feature.id}
+                        className="glass-card"
+                        style={{
+                            padding: '2.5rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '1.5rem',
+                            animation: `fadeIn 0.6s ease-out ${index * 0.1}s forwards`,
+                            opacity: 0,
+                            position: 'relative'
+                        }}
+                    >
+                        <div style={{
+                            width: '60px',
+                            height: '60px',
+                            borderRadius: '16px',
+                            background: feature.gradient,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '1.5rem',
+                            boxShadow: '0 10px 20px rgba(0,0,0,0.3)'
+                        }}>
+                            {index === 0 ? '📝' : index === 1 ? '💊' : index === 2 ? '⚠️' : '📋'}
+                        </div>
+                        <div>
+                            <h3 style={{ fontSize: '1.5rem', marginBottom: '0.75rem', fontWeight: 700 }}>{feature.title}</h3>
+                            <p style={{ color: 'var(--text-dim)', fontSize: '1rem', lineHeight: 1.6 }}>
+                                {feature.description}
+                            </p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.75rem', marginTop: 'auto' }}>
+                            {feature.tags.map(tag => (
+                                <span key={tag} style={{
+                                    fontSize: '0.75rem',
+                                    padding: '0.4rem 0.8rem',
+                                    borderRadius: '8px',
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid var(--glass-border)',
+                                    color: 'var(--text-dim)'
+                                }}>
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
                     </div>
-                    <div style={{ borderLeft: '2px solid var(--glass-border)', paddingLeft: 'var(--space-md)' }}>
-                        <p style={{ margin: 0, fontSize: '0.8rem' }}>AI Core</p>
-                        <div className="badge badge-success">Optimized</div>
-                    </div>
-                    <div style={{ borderLeft: '2px solid var(--glass-border)', paddingLeft: 'var(--space-md)' }}>
-                        <p style={{ margin: 0, fontSize: '0.8rem' }}>Security Layer</p>
-                        <div className="badge badge-success">Encrypted</div>
+                ))}
+            </div>
+
+            {/* System Status Banner */}
+            <div className="glass-card" style={{
+                marginTop: '4rem',
+                padding: '2rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.05), rgba(168, 85, 247, 0.05))'
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                    <div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', marginBottom: '0.25rem' }}>System Integrity</div>
+                        <div style={{ color: 'var(--success)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div className="status-dot healthy"></div>
+                            99.9% Uptime Verified
+                        </div>
                     </div>
                 </div>
+                <button className="btn-primary">View Global Audit Log</button>
             </div>
         </div>
     )
