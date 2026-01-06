@@ -22,11 +22,18 @@ async def root():
     return {"status": "healthy", "message": "HealthBridge AI API is running"}
 
 # Configure Gemini
-api_key = os.getenv("GOOGLE_API_KEY", "")
-if api_key and not api_key.startswith("your-"):
-    genai.configure(api_key=api_key)
+api_key = os.getenv("GOOGLE_API_KEY", "").strip()
+# Check if it's a valid-looking key and not a placeholder
+if api_key and len(api_key) > 10 and not api_key.startswith("your-"):
+    try:
+        genai.configure(api_key=api_key)
+        print("Gemini API configured successfully.")
+    except Exception as e:
+        print(f"Error configuring Gemini: {e}")
+        api_key = None
 else:
-    api_key = None # Force mock mode
+    print("Warning: GOOGLE_API_KEY is missing or invalid. Using Mock mode.")
+    api_key = None
 
 # Database Mock (In-memory for demo)
 class MockDB:
