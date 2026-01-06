@@ -1,6 +1,5 @@
 {
     "version": 2,
-    "outputDirectory": "frontend/dist",
     "cleanUrls": true,
     "rewrites": [
         {
