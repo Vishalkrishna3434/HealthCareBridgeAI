@@ -7,33 +7,17 @@ import MedicationManager from './components/MedicationManager'
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
-  const [serviceStatus, setServiceStatus] = useState({
-    patient: 'checking',
-    clinical: 'checking',
-    ai: 'checking'
-  })
+  const [serviceStatus, setServiceStatus] = useState('checking')
 
   // Check service health on mount
   useState(() => {
     const checkServices = async () => {
       try {
-        const PATIENT_URL = import.meta.env.VITE_PATIENT_SERVICE_URL || 'http://localhost:8080'
-        const CLINICAL_URL = import.meta.env.VITE_CLINICAL_SERVICE_URL || 'http://localhost:8081'
-        const AI_URL = import.meta.env.VITE_AI_SERVICE_URL || 'http://localhost:8082'
-
-        const checks = await Promise.allSettled([
-          fetch(`${PATIENT_URL}/health`).then(r => r.json()),
-          fetch(`${CLINICAL_URL}/health`).then(r => r.json()),
-          fetch(`${AI_URL}/health`).then(r => r.json())
-        ])
-
-        setServiceStatus({
-          patient: checks[0].status === 'fulfilled' ? 'healthy' : 'error',
-          clinical: checks[1].status === 'fulfilled' ? 'healthy' : 'error',
-          ai: checks[2].status === 'fulfilled' ? 'healthy' : 'error'
-        })
+        const response = await fetch('/api/health')
+        setServiceStatus(response.ok ? 'healthy' : 'error')
       } catch (error) {
         console.error('Service check failed:', error)
+        setServiceStatus('error')
       }
     }
 
@@ -57,16 +41,8 @@ function App() {
           <h1 className="app-title">HealthBridge AI</h1>
           <div className="service-status">
             <div className="status-indicator">
-              <div className={`status-dot ${serviceStatus.patient}`}></div>
-              <span>Patient</span>
-            </div>
-            <div className="status-indicator">
-              <div className={`status-dot ${serviceStatus.clinical}`}></div>
-              <span>Clinical</span>
-            </div>
-            <div className="status-indicator">
-              <div className={`status-dot ${serviceStatus.ai}`}></div>
-              <span>AI</span>
+              <div className={`status-dot ${serviceStatus}`}></div>
+              <span>System Status</span>
             </div>
           </div>
         </div>

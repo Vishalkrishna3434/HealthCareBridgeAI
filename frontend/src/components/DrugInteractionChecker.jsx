@@ -32,10 +32,9 @@ export default function DrugInteractionChecker() {
         setError(null)
         setResult(null)
 
-        const AI_URL = import.meta.env.VITE_AI_SERVICE_URL || 'http://localhost:8082'
 
         try {
-            const response = await fetch(`${AI_URL}/check-interactions`, {
+            const response = await fetch(`/api/check-interactions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

@@ -1,10 +1,13 @@
 import os
 import json
 import re
+import uuid
+from datetime import datetime
 from typing import Optional, List, Dict, Any
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, BackgroundTasks, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import httpx
 
 # Try to import dependencies for AI features
 try:
@@ -13,7 +16,7 @@ try:
 except ImportError:
     GEMINI_AVAILABLE = False
 
-app = FastAPI(title="HealthBridge AI")
+app = FastAPI(title="HealthBridge Unified API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -35,7 +38,7 @@ OUTPUT: Return ONLY valid JSON matching this structure:
 {
   "status": "success",
   "extracted_entities": {
-    "conditions": [{"clinical_text": "str", "icd_10": "str", "snomed_ct": "str", "severity": "str", "confidence": num}],
+    "conditions": [{"clinical_text": "str", "icd_10": "str", "severity": "str", "confidence": num}],
     "medications": [{"drug_name": "str", "rxnorm_code": "str", "dosage": "str", "frequency": "str", "confidence": num}],
     "allergies": [{"allergen": "str", "reaction": "str", "severity": "str"}],
     "labs": [{"test_name": "str", "result": "str", "units": "str", "loinc_code": "str"}],
@@ -46,12 +49,32 @@ OUTPUT: Return ONLY valid JSON matching this structure:
   "human_review_queue": []
 }"""
 
-# --- AI Logic Helpers ---
+# --- Mock Database & Logic ---
+_MOCK_DB = {} # Note: Resets on serverless restart
+
+def add_medication(user_id: str, data: dict) -> dict:
+    med_id = str(uuid.uuid4())
+    data["id"] = med_id
+    data["created_at"] = datetime.now().isoformat()
+    if user_id not in _MOCK_DB: _MOCK_DB[user_id] = {"medications": [], "adherence": []}
+    _MOCK_DB[user_id]["medications"].append(data)
+    return data
+
+def get_medications(user_id: str) -> list:
+    return _MOCK_DB.get(user_id, {}).get("medications", [])
+
+def log_adherence(user_id: str, data: dict) -> str:
+    log_id = str(uuid.uuid4())
+    data["id"] = log_id
+    if user_id not in _MOCK_DB: _MOCK_DB[user_id] = {"medications": [], "adherence": []}
+    _MOCK_DB[user_id]["adherence"].append(data)
+    return log_id
+
 def get_mock_analysis(patient_id: str):
     return {
         "status": "success", "patient_id": patient_id,
         "extracted_entities": {
-            "conditions": [{"clinical_text": "Type 2 diabetes", "icd_10": "E11.9", "snomed_ct": "44054006", "severity": "moderate", "confidence": 95}],
+            "conditions": [{"clinical_text": "Type 2 diabetes", "icd_10": "E11.9", "severity": "moderate", "confidence": 95}],
             "medications": [{"drug_name": "Metformin", "rxnorm_code": "6809", "dosage": "1000mg", "frequency": "twice daily", "confidence": 99}],
             "allergies": [{"allergen": "Penicillin", "reaction": "Rash", "severity": "moderate"}],
             "labs": [{"test_name": "HbA1c", "result": "7.2", "units": "%", "loinc_code": "4548-4"}],
@@ -74,11 +97,45 @@ class ClinicalNote(BaseModel):
 class DrugInteractionRequest(BaseModel):
     medications: List[str]
 
-# --- Endpoints ---
-@app.get("/health")
-def health_check(): return {"status": "healthy", "service": "healthbridge-ai"}
+class Medication(BaseModel):
+    name: str
+    dosage: str
+    frequency: str
 
-@app.post("/analyze-note")
+class AdherenceEvent(BaseModel):
+    medication_id: str
+    status: str
+    timestamp: str
+
+# --- Auth ---
+def verify_token(authorization: str = Header(...)):
+    if not authorization.startswith("Bearer "): raise HTTPException(status_code=401)
+    token = authorization.split("Bearer ")[1]
+    if token == "valid_token": return {"uid": "user_123"}
+    raise HTTPException(status_code=401, detail="Invalid token")
+
+# --- Routes ---
+
+@app.get("/api/health")
+def health_check():
+    return {"status": "healthy", "service": "unified-api"}
+
+# Patient Management
+@app.get("/api/medications", response_model=List[dict])
+def list_medications(user = Depends(verify_token)):
+    return get_medications(user["uid"])
+
+@app.post("/api/medications")
+def create_medication(med: Medication, user = Depends(verify_token)):
+    return add_medication(user["uid"], med.dict())
+
+@app.post("/api/adherence")
+async def record_adherence(event: AdherenceEvent, background_tasks: BackgroundTasks, user = Depends(verify_token)):
+    log_id = log_adherence(user["uid"], event.dict())
+    return {"status": "recorded", "log_id": log_id}
+
+# Clinical Intelligence
+@app.post("/api/analyze-note")
 async def analyze_note(note: ClinicalNote):
     if not note.note_text.strip(): raise HTTPException(status_code=400, detail="Empty note")
     if GEMINI_AVAILABLE and os.getenv("GOOGLE_API_KEY"):
@@ -94,23 +151,21 @@ async def analyze_note(note: ClinicalNote):
         except Exception as e: print(f"AI Error: {e}")
     return get_mock_analysis(note.patient_id)
 
-@app.post("/scan-prescription")
+@app.post("/api/scan-prescription")
 async def scan_prescription(file: UploadFile = File(...)):
-    # Simplified OCR/Vision mock as per vision_ocr.py logic
     return {
         "status": "success", "mode": "mock",
         "medications": [{"name": "Amoxicillin", "dosage": "500mg", "frequency": "Three times daily", "confidence": 0.92}]
     }
 
-@app.post("/check-interactions")
+@app.post("/api/check-interactions")
 async def check_interactions(request: DrugInteractionRequest):
-    # Simplified interaction mock
     interactions = []
     if "aspirin" in [m.lower() for m in request.medications] and "warfarin" in [m.lower() for m in request.medications]:
         interactions.append({"drug_a": "Aspirin", "drug_b": "Warfarin", "severity": "HIGH", "mechanism": "Increased bleeding risk"})
     return {"status": "success", "interactions": interactions}
 
-@app.post("/de-identify")
+@app.post("/api/de-identify")
 async def de_identify(note: ClinicalNote):
     if GEMINI_AVAILABLE and os.getenv("GOOGLE_API_KEY"):
         try:
@@ -120,7 +175,7 @@ async def de_identify(note: ClinicalNote):
         except Exception: pass
     return {"status": "success", "de_identified_text": f"[DE-IDENTIFIED] {note.note_text[:50]}..."}
 
-@app.post("/generate-coaching")
+@app.post("/api/generate-coaching")
 async def generate_coaching(patient_context: Dict[str, Any]):
     if GEMINI_AVAILABLE and os.getenv("GOOGLE_API_KEY"):
         try:
@@ -131,7 +186,3 @@ async def generate_coaching(patient_context: Dict[str, Any]):
             if match: return {"status": "success", "coaching_messages": json.loads(match.group(1).strip())}
         except Exception: pass
     return {"status": "success", "coaching_messages": get_mock_coaching()}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)

@@ -13,7 +13,6 @@ export default function MedicationManager() {
     const [error, setError] = useState(null)
     const [mockUserId] = useState('demo-user-123') // Mock user ID for demo
 
-    const PATIENT_URL = import.meta.env.VITE_PATIENT_SERVICE_URL || 'http://localhost:8080'
 
     // Load medications on mount
     useEffect(() => {
@@ -24,7 +23,7 @@ export default function MedicationManager() {
         setLoading(true)
         setError(null)
         try {
-            const response = await fetchWithRetry(`${PATIENT_URL}/medications`, {
+            const response = await fetchWithRetry(`/api/medications`, {
                 headers: {
                     'Authorization': 'Bearer valid_token'
                 }
@@ -44,7 +43,7 @@ export default function MedicationManager() {
         setError(null)
 
         try {
-            const response = await fetch(`${PATIENT_URL}/medications`, {
+            const response = await fetch(`/api/medications`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -65,7 +64,7 @@ export default function MedicationManager() {
 
     const logAdherence = async (medId, status) => {
         try {
-            const response = await fetch(`${PATIENT_URL}/adherence`, {
+            const response = await fetch(`/api/adherence`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

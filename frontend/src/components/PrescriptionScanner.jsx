@@ -50,13 +50,12 @@ export default function PrescriptionScanner() {
         setError(null)
         setResult(null)
 
-        const AI_URL = import.meta.env.VITE_AI_SERVICE_URL || 'http://localhost:8082'
 
         try {
             const formData = new FormData()
             formData.append('file', selectedFile)
 
-            const response = await fetch(`${AI_URL}/scan-prescription`, {
+            const response = await fetch(`/api/scan-prescription`, {
                 method: 'POST',
                 body: formData
             })

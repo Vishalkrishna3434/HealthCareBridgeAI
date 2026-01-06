@@ -16,10 +16,9 @@ export default function ClinicalNoteAnalyzer() {
         setError(null)
         setResult(null)
 
-        const AI_URL = import.meta.env.VITE_AI_SERVICE_URL || 'http://localhost:8082'
 
         try {
-            const response = await fetch(`${AI_URL}/analyze-note`, {
+            const response = await fetch(`/api/analyze-note`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -46,9 +45,8 @@ export default function ClinicalNoteAnalyzer() {
     }
 
     const fetchCoaching = async (analysisData) => {
-        const AI_URL = import.meta.env.VITE_AI_SERVICE_URL || 'http://localhost:8082'
         try {
-            const coachingResponse = await fetch(`${AI_URL}/generate-coaching`, {
+            const coachingResponse = await fetch(`/api/generate-coaching`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -69,9 +67,8 @@ export default function ClinicalNoteAnalyzer() {
     const handleDeIdentify = async () => {
         setLoading(true)
         setError(null)
-        const AI_URL = import.meta.env.VITE_AI_SERVICE_URL || 'http://localhost:8082'
         try {
-            const response = await fetch(`${AI_URL}/de-identify`, {
+            const response = await fetch(`/api/de-identify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
