@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { api } from '../api'
 
 export default function ClinicalNoteAnalyzer() {
     const [formData, setFormData] = useState({
@@ -16,24 +17,13 @@ export default function ClinicalNoteAnalyzer() {
         setError(null)
         setResult(null)
 
-
         try {
-            const response = await fetch(`/api/analyze-note`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    patient_id: formData.patientId,
-                    note_text: formData.noteText,
-                    note_date: formData.noteDate || null
-                })
+            const data = await api.analyzeNote({
+                patient_id: formData.patientId,
+                note_text: formData.noteText,
+                note_date: formData.noteDate || null
             })
-
-            if (!response.ok) throw new Error('Analysis failed')
-
-            const data = await response.json()
             setResult(data)
-
-            // Simultaneously fetch coaching
             if (data.extracted_entities?.medications?.length > 0) {
                 fetchCoaching(data)
             }
@@ -46,19 +36,12 @@ export default function ClinicalNoteAnalyzer() {
 
     const fetchCoaching = async (analysisData) => {
         try {
-            const coachingResponse = await fetch(`/api/generate-coaching`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    age: 45, // Mock patient context
-                    medications: analysisData.extracted_entities.medications,
-                    barriers: analysisData.adherence_insights?.barriers_identified || []
-                })
+            const coachingData = await api.generateCoaching({
+                age: 45,
+                medications: analysisData.extracted_entities.medications,
+                barriers: analysisData.adherence_insights?.barriers_identified || []
             })
-            if (coachingResponse.ok) {
-                const coachingData = await coachingResponse.json()
-                setResult(prev => ({ ...prev, coaching: coachingData.coaching_messages }))
-            }
+            setResult(prev => ({ ...prev, coaching: coachingData.coaching_messages }))
         } catch (err) {
             console.error('Coaching fetch failed:', err)
         }
@@ -68,16 +51,10 @@ export default function ClinicalNoteAnalyzer() {
         setLoading(true)
         setError(null)
         try {
-            const response = await fetch(`/api/de-identify`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    patient_id: formData.patientId,
-                    note_text: formData.noteText
-                })
+            const data = await api.deIdentify({
+                patient_id: formData.patientId,
+                note_text: formData.noteText
             })
-            if (!response.ok) throw new Error('De-identification failed')
-            const data = await response.json()
             setResult(prev => ({ ...prev, deIdentifiedText: data.de_identified_text }))
         } catch (err) {
             setError(err.message)

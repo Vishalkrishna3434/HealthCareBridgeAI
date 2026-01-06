@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { fetchWithRetry } from '../utils/api'
+import { api } from '../api'
 
 export default function MedicationManager() {
     const [medications, setMedications] = useState([])
@@ -13,25 +13,18 @@ export default function MedicationManager() {
     const [error, setError] = useState(null)
     const [mockUserId] = useState('demo-user-123') // Mock user ID for demo
 
-
     // Load medications on mount
     useEffect(() => {
-        fetchMedications()
+        loadMedications()
     }, [])
 
-    const fetchMedications = async () => {
+    const loadMedications = async () => {
         setLoading(true)
         setError(null)
         try {
-            const response = await fetchWithRetry(`/api/medications`, {
-                headers: {
-                    'Authorization': 'Bearer valid_token'
-                }
-            })
-            const data = await response.json()
+            const data = await api.getMedications()
             setMedications(data)
         } catch (err) {
-            console.error('Failed to fetch medications:', err)
             setError('Failed to load medications: ' + err.message)
         } finally {
             setLoading(false)
@@ -40,50 +33,29 @@ export default function MedicationManager() {
 
     const handleAddMedication = async (e) => {
         e.preventDefault()
+        setLoading(true)
         setError(null)
-
         try {
-            const response = await fetch(`/api/medications`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer valid_token'
-                },
-                body: JSON.stringify(newMed)
-            })
-
-            if (!response.ok) throw new Error('Failed to add medication')
-
-            fetchMedications() // Refresh list
-            setNewMed({ name: '', dosage: '', frequency: '' })
+            await api.addMedication(formData)
+            await loadMedications()
+            setFormData({ name: '', dosage: '', frequency: '' })
             setShowAddForm(false)
         } catch (err) {
-            setError(err.message)
+            setError('Failed to add medication: ' + err.message)
+        } finally {
+            setLoading(false)
         }
     }
 
     const logAdherence = async (medId, status) => {
         try {
-            const response = await fetch(`/api/adherence`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer valid_token'
-                },
-                body: JSON.stringify({
-                    medication_id: medId,
-                    status: status,
-                    timestamp: new Date().toISOString()
-                })
+            await api.logAdherence({
+                medication_id: medId,
+                status: status,
+                timestamp: new Date().toISOString()
             })
-
-            if (response.ok) {
-                alert(`Adherence logged: ${status}`)
-            } else {
-                throw new Error('Failed to log adherence')
-            }
+            alert(`Adherence logged: ${status}`)
         } catch (err) {
-            console.error('Failed to log adherence:', err)
             setError('Failed to log adherence: ' + err.message)
         }
     }

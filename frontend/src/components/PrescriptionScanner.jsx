@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { api } from '../api'
 
 export default function PrescriptionScanner() {
     const [selectedFile, setSelectedFile] = useState(null)
@@ -45,24 +46,11 @@ export default function PrescriptionScanner() {
     const handleSubmit = async (e) => {
         e.preventDefault()
         if (!selectedFile) return
-
         setLoading(true)
         setError(null)
         setResult(null)
-
-
         try {
-            const formData = new FormData()
-            formData.append('file', selectedFile)
-
-            const response = await fetch(`/api/scan-prescription`, {
-                method: 'POST',
-                body: formData
-            })
-
-            if (!response.ok) throw new Error('Scan failed')
-
-            const data = await response.json()
+            const data = await api.scanPrescription(selectedFile)
             setResult(data)
         } catch (err) {
             setError(err.message)

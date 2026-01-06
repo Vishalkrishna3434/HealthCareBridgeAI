@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  patient-service:
+    build: ./patient_service
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./patient_service:/app
+    environment:
+      - PORT=8080
+      - GOOGLE_CLOUD_PROJECT=healthbridge-local
+      - FIRESTORE_EMULATOR_HOST=firestore-emulator:8080
+    command: uvicorn main:app --host 0.0.0.0 --port 8080 --reload
+
+  clinical-service:
+    build: ./clinical_service
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./clinical_service:/app
+    environment:
+      - PORT=8080
+      - GOOGLE_CLOUD_PROJECT=healthbridge-local
+    command: uvicorn main:app --host 0.0.0.0 --port 8080 --reload
+
+  analytics-pipeline:
+    build: ./analytics_pipeline
+    ports:
+      - "8083:8080"
+    volumes:
+      - ./analytics_pipeline:/app
+    environment:
+      - PORT=8080
+      - FUNCTION_TARGET=ingest_adherence_event
+      - FUNCTION_SIGNATURE_TYPE=event
+    # functions-framework for local development
+    command: functions-framework --target=ingest_adherence_event --signature-type=event --port=8080 --debug
+
+  healthbridge-ai:
+    build: ./healthbridge_ai
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./healthbridge_ai:/app
+    environment:
+      - PORT=8080
+      - DATABASE_URL=sqlite:///./healthbridge.db
+    command: uvicorn main:app --host 0.0.0.0 --port 8080 --reload
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8080

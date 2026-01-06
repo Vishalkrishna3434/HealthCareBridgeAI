@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { api } from '../api'
 
 export default function DrugInteractionChecker() {
     const [medications, setMedications] = useState([''])
@@ -22,29 +23,16 @@ export default function DrugInteractionChecker() {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-
-        if (medications.filter(m => m.trim()).length < 2) {
-            setError('Please enter at least two medications to check for interactions.')
+        const validMeds = medications.filter(med => med.trim())
+        if (validMeds.length < 2) {
+            setError('Please enter at least 2 medications to check for interactions')
             return
         }
-
         setLoading(true)
         setError(null)
         setResult(null)
-
-
         try {
-            const response = await fetch(`/api/check-interactions`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    medications: medications.filter(m => m.trim())
-                })
-            })
-
-            if (!response.ok) throw new Error('Interaction check failed')
-
-            const data = await response.json()
+            const data = await api.checkInteractions(validMeds)
             setResult(data)
         } catch (err) {
             setError(err.message)
