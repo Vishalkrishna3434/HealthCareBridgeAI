@@ -78,27 +78,14 @@ export default function PrescriptionScanner() {
                 </p>
             </div>
 
-            <div className="grid grid-2">
-                <div className="card">
-                    <h3 style={{ marginBottom: 'var(--space-lg)' }}>Upload Prescription</h3>
+            <div className="grid grid-2" style={{ gap: '2rem' }}>
+                <div className="glass-card" style={{ padding: '2rem' }}>
+                    <h3 style={{ marginBottom: '1.5rem' }}>Upload Prescription</h3>
 
                     <div
                         onDrop={handleDrop}
                         onDragOver={handleDragOver}
-                        style={{
-                            border: '2px dashed var(--glass-border)',
-                            borderRadius: 'var(--radius-lg)',
-                            padding: 'var(--space-2xl)',
-                            textAlign: 'center',
-                            cursor: 'pointer',
-                            transition: 'all var(--transition-base)',
-                            background: preview ? 'transparent' : 'var(--bg-secondary)',
-                            minHeight: '300px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}
+                        className="file-upload-zone"
                         onClick={() => fileInputRef.current?.click()}
                     >
                         {preview ? (
@@ -108,17 +95,17 @@ export default function PrescriptionScanner() {
                                 style={{
                                     maxWidth: '100%',
                                     maxHeight: '400px',
-                                    borderRadius: 'var(--radius-md)'
+                                    borderRadius: '16px'
                                 }}
                             />
                         ) : (
                             <>
-                                <div style={{ fontSize: '4rem', marginBottom: 'var(--space-md)' }}>📄</div>
-                                <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-sm)' }}>
+                                <span className="icon">📄</span>
+                                <p style={{ color: 'var(--text-main)', fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.5rem' }}>
                                     Drag and drop an image here
                                 </p>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                                    or click to browse
+                                <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem' }}>
+                                    or click to browse from system
                                 </p>
                             </>
                         )}
@@ -136,25 +123,17 @@ export default function PrescriptionScanner() {
                         <div style={{ marginTop: 'var(--space-lg)', display: 'flex', gap: 'var(--space-md)' }}>
                             <button
                                 onClick={handleSubmit}
-                                className="btn btn-primary"
+                                className="btn-primary"
                                 disabled={loading}
                                 style={{ flex: 1 }}
                             >
-                                {loading ? (
-                                    <>
-                                        <span className="spinner"></span>
-                                        Scanning...
-                                    </>
-                                ) : (
-                                    <>
-                                        🔍 Scan Prescription
-                                    </>
-                                )}
+                                {loading ? 'Scanning...' : '🔍 Scan Prescription'}
                             </button>
 
                             <button
                                 onClick={clearFile}
-                                className="btn btn-secondary"
+                                className="tab-button"
+                                style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--glass-border)' }}
                                 disabled={loading}
                             >
                                 Clear
@@ -169,8 +148,8 @@ export default function PrescriptionScanner() {
                     )}
                 </div>
 
-                <div className="card">
-                    <h3 style={{ marginBottom: 'var(--space-lg)' }}>Extracted Information</h3>
+                <div className="glass-card" style={{ padding: '2rem' }}>
+                    <h3 style={{ marginBottom: '1.5rem' }}>Extracted Information</h3>
 
                     {result ? (
                         <div className="fade-in">

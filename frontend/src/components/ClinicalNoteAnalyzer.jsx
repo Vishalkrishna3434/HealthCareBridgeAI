@@ -72,8 +72,8 @@ export default function ClinicalNoteAnalyzer() {
                 </p>
             </div>
 
-            <div className="card">
-                <form onSubmit={handleSubmit}>
+            <div className="glass-card" style={{ padding: '2rem' }}>
+                <form onSubmit={handleSubmit} className="form-container">
                     <div className="form-row">
                         <div className="form-group">
                             <label htmlFor="patientId">Patient ID *</label>
@@ -110,33 +110,24 @@ Patient presents with chest pain and shortness of breath. History of hypertensio
 Prescribed Lisinopril 10mg daily and Aspirin 81mg daily."
                             value={formData.noteText}
                             onChange={(e) => setFormData({ ...formData, noteText: e.target.value })}
-                            style={{ minHeight: '200px' }}
                         />
                     </div>
 
                     <div style={{ display: 'flex', gap: 'var(--space-md)' }}>
                         <button
                             type="submit"
-                            className="btn btn-primary"
+                            className="btn-primary"
                             disabled={loading}
                             style={{ flex: 1 }}
                         >
-                            {loading ? (
-                                <>
-                                    <span className="spinner"></span>
-                                    Processing...
-                                </>
-                            ) : (
-                                <>
-                                    🔍 Analyze Clinical Note
-                                </>
-                            )}
+                            {loading ? 'Processing...' : '🔍 Analyze Clinical Note'}
                         </button>
 
                         <button
                             type="button"
                             onClick={handleDeIdentify}
-                            className="btn btn-secondary"
+                            className="tab-button"
+                            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)' }}
                             disabled={loading || !formData.noteText}
                         >
                             🛡️ De-identify (HIPAA)

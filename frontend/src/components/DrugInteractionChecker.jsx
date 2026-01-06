@@ -60,12 +60,12 @@ export default function DrugInteractionChecker() {
                 </p>
             </div>
 
-            <div className="grid grid-2">
-                <div className="card">
+            <div className="grid grid-2" style={{ gap: '2rem' }}>
+                <div className="glass-card" style={{ padding: '2rem' }}>
                     <h3 style={{ marginBottom: 'var(--space-lg)' }}>Medications</h3>
 
-                    <form onSubmit={handleSubmit}>
-                        <div style={{ marginBottom: 'var(--space-lg)' }}>
+                    <form onSubmit={handleSubmit} className="form-container">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             {medications.map((med, index) => (
                                 <div key={index} style={{ display: 'flex', gap: 'var(--space-md)', marginBottom: 'var(--space-md)' }}>
                                     <div style={{ flex: 1 }}>
@@ -99,27 +99,19 @@ export default function DrugInteractionChecker() {
                             <button
                                 type="button"
                                 onClick={addMedication}
-                                className="btn btn-secondary"
+                                className="tab-button"
+                                style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--glass-border)' }}
                             >
                                 ➕ Add Medication
                             </button>
 
                             <button
                                 type="submit"
-                                className="btn btn-primary"
+                                className="btn-primary"
                                 disabled={loading}
                                 style={{ flex: 1 }}
                             >
-                                {loading ? (
-                                    <>
-                                        <span className="spinner"></span>
-                                        Checking...
-                                    </>
-                                ) : (
-                                    <>
-                                        🔍 Check Interactions
-                                    </>
-                                )}
+                                {loading ? 'Checking...' : '🔍 Check Interactions'}
                             </button>
                         </div>
                     </form>
