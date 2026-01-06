@@ -2,7 +2,7 @@
     "name": "healthbridge-ai-root",
     "private": true,
     "scripts": {
-        "build": "npm run build --prefix frontend",
-        "install": "npm install --prefix frontend"
+        "build": "cd frontend && npm install && npm run build -- --outDir ../dist",
+        "install": "cd frontend && npm install"
     }
 }
