@@ -108,13 +108,55 @@ async def analyze_note(note: ClinicalNote):
     
     try:
         model = genai.GenerativeModel('gemini-1.5-pro-latest')
-        prompt = f"Analyze this clinical note and extract structured data (conditions, medications, fhir_resources). Note: {note.note_text}. Return valid JSON."
+        prompt = f"""
+        Analyze this clinical note and extract structured medical data.
+        Note: {note.note_text}
+        
+        Return the result in valid JSON format ONLY with this exact structure:
+        {{
+            "extracted_entities": {{
+                "conditions": [
+                    {{
+                        "clinical_text": "...",
+                        "icd_10": "...",
+                        "confidence": 0-100,
+                        "severity": "Mild/Moderate/Severe/Chronic"
+                    }}
+                ],
+                "medications": [
+                    {{
+                        "drug_name": "...",
+                        "dosage": "...",
+                        "frequency": "...",
+                        "confidence": 0-100
+                    }}
+                ]
+            }},
+            "adherence_insights": {{
+                "complexity_score": 1-5,
+                "barriers_identified": ["...", "..."]
+            }},
+            "fhir_resources": {{
+                "resourceType": "Bundle",
+                "type": "collection",
+                "entry": [
+                    {{
+                        "resource": {{
+                            "resourceType": "Condition/MedicationRequest/Patient",
+                            "..." : "..."
+                        }}
+                    }}
+                ]
+            }}
+        }}
+        """
         response = model.generate_content(prompt)
         text = response.text
         if "```json" in text:
             text = text.split("```json")[1].split("```")[0]
         return json.loads(text.strip())
     except Exception as e:
+        print(f"Error in analyze_note: {str(e)}")
         return get_mock_analysis(note.patient_id, note.note_text)
 
 @app.post("/api/scan-prescription")
@@ -195,14 +237,32 @@ async def check_interactions(req: MedicationsRequest):
     
     try:
         model = genai.GenerativeModel('gemini-1.5-pro-latest')
-        prompt = f"Check for drug interactions between: {', '.join(req.medications)}. Return JSON with format {{'interactions': [{{'drug_a', 'drug_b', 'severity', 'mechanism', 'recommendation'}}]}}."
+        prompt = f"""
+        Check for drug-drug interactions between these medications: {', '.join(req.medications)}.
+        
+        Return the result in valid JSON format ONLY with this exact structure:
+        {{
+            "interactions": [
+                {{
+                    "drug_a": "...",
+                    "drug_b": "...",
+                    "severity": "High/Moderate/Low",
+                    "mechanism": "Brief scientific reason for interaction",
+                    "recommendation": "Clinical advice for the provider"
+                }}
+            ],
+            "warnings": ["General safety warning 1", "General safety warning 2"]
+        }}
+        If no interactions are found, return "interactions": [].
+        """
         response = model.generate_content(prompt)
         text = response.text
         if "```json" in text:
             text = text.split("```json")[1].split("```")[0]
         return json.loads(text.strip())
-    except Exception:
-        return {"interactions": []}
+    except Exception as e:
+        print(f"Error in check_interactions: {str(e)}")
+        return {"interactions": [], "warnings": ["Error processing interaction check."]}
 
 @app.post("/api/de-identify")
 async def de_identify(note: ClinicalNote):
