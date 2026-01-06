@@ -16,6 +16,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+@app.get("/api")
+async def root():
+    return {"status": "healthy", "message": "HealthBridge AI API is running"}
+
 # Configure Gemini
 api_key = os.getenv("GOOGLE_API_KEY", "")
 if api_key:
