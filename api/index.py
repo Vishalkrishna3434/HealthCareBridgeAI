@@ -22,17 +22,19 @@ async def root():
     return {"status": "healthy", "message": "HealthBridge AI API is running"}
 
 # Configure Gemini
+# EMERGENCY: Hardcoding key per user "at any cost" request to bypass Vercel env delays
 api_key = os.getenv("GOOGLE_API_KEY", "").strip()
-# Check if it's a valid-looking key and not a placeholder
-if api_key and len(api_key) > 10 and not api_key.startswith("your-"):
-    try:
+if not api_key or api_key.startswith("your-") or len(api_key) < 10:
+    api_key = "AIzaSyDaHd56SunsT-k8_dpztRSK65kCqFzvBYg"
+
+try:
+    if api_key:
         genai.configure(api_key=api_key)
-        print("Gemini API configured successfully.")
-    except Exception as e:
-        print(f"Error configuring Gemini: {e}")
-        api_key = None
-else:
-    print("Warning: GOOGLE_API_KEY is missing or invalid. Using Mock mode.")
+        print("Gemini API configured successfully (using hardcoded fallback if env was missing).")
+    else:
+        print("Critical Error: No API key available even in fallback.")
+except Exception as e:
+    print(f"Error configuring Gemini: {e}")
     api_key = None
 
 # Database Mock (In-memory for demo)
