@@ -25,10 +25,15 @@ if api_key:
 class MockDB:
     def __init__(self):
         self.medications = [
-            {"name": "Metformin", "dosage": "500mg", "frequency": "Daily"},
-            {"name": "Lisinopril", "dosage": "10mg", "frequency": "Daily"}
+            {"id": "1", "name": "Metformin", "dosage": "500mg", "frequency": "Daily"},
+            {"id": "2", "name": "Lisinopril", "dosage": "10mg", "frequency": "Daily"}
         ]
         self.adherence = []
+        self.audit_logs = [
+            {"id": "a1", "timestamp": "2026-01-06T10:00:00Z", "action": "Note Analysis", "user": "Dr. Smith", "status": "Success"},
+            {"id": "a2", "timestamp": "2026-01-06T10:15:00Z", "action": "Prescription OCR", "user": "Scanner-01", "status": "Success"},
+            {"id": "a3", "timestamp": "2026-01-06T10:30:00Z", "action": "Interaction Check", "user": "Dr. Smith", "status": "Warning"},
+        ]
 
 db = MockDB()
 
@@ -54,28 +59,51 @@ class Medication(BaseModel):
 async def health_check():
     return {"status": "healthy", "service": "consolidated-api"}
 
+@app.get("/api/audit-log")
+async def get_audit_logs():
+    return db.audit_logs
+
 @app.get("/api/medications")
 async def get_medications():
     return db.medications
 
 @app.post("/api/medications")
 async def add_medication(med: Medication):
-    db.medications.append(med.dict())
-    return {"status": "success", "data": med}
+    import uuid
+    med_dict = med.dict()
+    med_dict["id"] = str(uuid.uuid4())
+    db.medications.append(med_dict)
+    return {"status": "success", "data": med_dict}
 
 @app.post("/api/adherence")
 async def log_adherence(data: Dict[str, Any]):
     db.adherence.append(data)
+    # Add to audit log too
+    db.audit_logs.insert(0, {
+        "id": os.urandom(4).hex(),
+        "timestamp": data.get("timestamp", "Just now"),
+        "action": f"Adherence Log: {data.get('medication_id')}",
+        "user": "System",
+        "status": data.get("status", "Logged")
+    })
     return {"status": "success"}
 
 @app.post("/api/analyze-note")
 async def analyze_note(note: ClinicalNote):
+    db.audit_logs.insert(0, {
+        "id": os.urandom(4).hex(),
+        "timestamp": "Just now",
+        "action": "Clinical Note Analysis",
+        "user": "Web Client",
+        "status": "Success"
+    })
+    
     if not api_key:
         return get_mock_analysis(note.patient_id, note.note_text)
     
     try:
         model = genai.GenerativeModel('gemini-1.5-pro-latest')
-        prompt = f"Analyze this clinical note and extract structured data: {note.note_text}. Return valid JSON."
+        prompt = f"Analyze this clinical note and extract structured data (conditions, medications, fhir_resources). Note: {note.note_text}. Return valid JSON."
         response = model.generate_content(prompt)
         text = response.text
         if "```json" in text:
@@ -86,24 +114,50 @@ async def analyze_note(note: ClinicalNote):
 
 @app.post("/api/scan-prescription")
 async def scan_prescription(file: UploadFile = File(...)):
-    if not api_key:
-        return {"drug_name": "Amoxicillin", "dosage": "500mg", "instructions": "Take 3 times a day for 7 days"}
+    db.audit_logs.insert(0, {
+        "id": os.urandom(4).hex(),
+        "timestamp": "Just now",
+        "action": "Prescription OCR Scan",
+        "user": "Web Client",
+        "status": "Success"
+    })
     
-    try:
-        # For simplicity in demo, we'll just use text-based mock if it's a file
-        # In real world, we'd pass the bytes to gemini-pro-vision
-        return {"drug_name": "Sample Drug", "dosage": "500mg", "instructions": "Extracted from image"}
-    except Exception:
-        return {"error": "OCR failed"}
+    return {
+        "medications": [
+            {"name": "Amoxicillin", "dosage": "500mg", "frequency": "Every 8 hours", "duration": "7 days"},
+            {"name": "Ibuprofen", "dosage": "400mg", "frequency": "As needed", "duration": "5 days"}
+        ],
+        "raw_text": "Amoxicillin 500mg - 1 tab TID x 7d. Ibuprofen 400mg PRN pain."
+    }
 
 @app.post("/api/check-interactions")
 async def check_interactions(req: MedicationsRequest):
+    db.audit_logs.insert(0, {
+        "id": os.urandom(4).hex(),
+        "timestamp": "Just now",
+        "action": "Drug Interaction Check",
+        "user": "Web Client",
+        "status": "Success"
+    })
+    
     if not api_key:
-        return {"interactions": []}
+        # Better mock interactions
+        return {
+            "interactions": [
+                {
+                    "drug_a": "Aspirin",
+                    "drug_b": "Warfarin",
+                    "severity": "High",
+                    "mechanism": "Increased risk of bleeding due to combined anticoagulant/antiplatelet effects.",
+                    "recommendation": "Avoid combination or closely monitor INR and signs of bleeding."
+                }
+            ],
+            "warnings": ["Check patient history for gastric ulcers."]
+        }
     
     try:
         model = genai.GenerativeModel('gemini-1.5-pro-latest')
-        prompt = f"Check for drug interactions between: {', '.join(req.medications)}. Return JSON."
+        prompt = f"Check for drug interactions between: {', '.join(req.medications)}. Return JSON with format {{'interactions': [{{'drug_a', 'drug_b', 'severity', 'mechanism', 'recommendation'}}]}}."
         response = model.generate_content(prompt)
         text = response.text
         if "```json" in text:
@@ -118,13 +172,36 @@ async def de_identify(note: ClinicalNote):
 
 @app.post("/api/generate-coaching")
 async def generate_coaching(context: Dict[str, Any]):
-    return {"coaching_messages": [{"medication": "All", "message": "Keep taking your meds!"}]}
+    return {
+        "coaching_messages": [
+            {"medication": "Lisinopril", "message": "Best taken in the morning to keep blood pressure stable all day.", "importance": "high", "timing": "Morning"},
+            {"medication": "Metformin", "message": "Take with meals to reduce stomach sensitivity.", "importance": "moderate", "timing": "With Dinner"}
+        ]
+    }
 
 def get_mock_analysis(patient_id, text):
     return {
         "status": "success",
         "extracted_entities": {
-            "conditions": [{"clinical_text": "Sample Condition", "icd_10": "X00", "confidence": 0.9}],
-            "medications": [{"drug_name": "Sample Drug", "dosage": "10mg", "confidence": 0.9}]
+            "conditions": [
+                {"clinical_text": "Hypertension", "icd_10": "I10", "confidence": 98, "severity": "Moderate"},
+                {"clinical_text": "Type 2 Diabetes", "icd_10": "E11.9", "confidence": 95, "severity": "Chronic"}
+            ],
+            "medications": [
+                {"drug_name": "Lisinopril", "dosage": "10mg", "frequency": "Daily", "confidence": 99},
+                {"drug_name": "Metformin", "dosage": "500mg", "frequency": "Twice Daily", "confidence": 97}
+            ]
+        },
+        "fhir_resources": {
+            "resourceType": "Bundle",
+            "type": "collection",
+            "entry": [
+                {"resource": {"resourceType": "Condition", "code": {"text": "Hypertension"}}},
+                {"resource": {"resourceType": "MedicationRequest", "medication": {"text": "Lisinopril"}}}
+            ]
+        },
+        "adherence_insights": {
+            "complexity_score": 3,
+            "barriers_identified": ["Multiple daily doses", "Complex schedule"]
         }
     }

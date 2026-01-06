@@ -54,13 +54,21 @@ export default function MedicationManager() {
                 status: status,
                 timestamp: new Date().toISOString()
             })
-            alert(`Adherence logged: ${status}`)
+            // Update local state or just show feedback
+            const med = medications.find(m => m.id === medId)
+            alert(`${med.name}: Adherence logged as ${status.toUpperCase()}`)
+            loadMedications() // Refresh logs if we had a list, but at least refresh stats
         } catch (err) {
             setError('Failed to log adherence: ' + err.message)
         }
     }
 
-    const deleteMedication = (medId) => {
+    const deleteMedication = async (medId) => {
+        if (!window.confirm('Are you sure you want to remove this medication?')) return
+
+        // In this consolidated demo, we'll just filter locally for now 
+        // as the backend MockDB doesn't have a DELETE endpoint yet.
+        // But let's show the intent.
         setMedications(medications.filter(med => med.id !== medId))
     }
 

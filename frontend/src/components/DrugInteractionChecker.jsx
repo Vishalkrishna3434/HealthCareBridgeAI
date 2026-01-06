@@ -123,7 +123,7 @@ export default function DrugInteractionChecker() {
                     )}
                 </div>
 
-                <div className="card">
+                <div className="glass-card" style={{ padding: '2rem' }}>
                     <h3 style={{ marginBottom: 'var(--space-lg)' }}>Interaction Results</h3>
 
                     {result ? (

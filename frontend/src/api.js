@@ -40,6 +40,9 @@ export const api = {
     deIdentify: (data) => apiRequest('ai', '/de-identify', { method: 'POST', body: JSON.stringify(data) }),
     generateCoaching: (context) => apiRequest('ai', '/generate-coaching', { method: 'POST', body: JSON.stringify(context) }),
 
+    // Audit Logs
+    getAuditLogs: () => apiRequest('ai', '/audit-log'),
+
     // Health checks
     checkHealth: (service) => apiRequest(service, '/health').catch(() => ({ status: 'error' })),
 };

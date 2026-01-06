@@ -246,15 +246,22 @@ Prescribed Lisinopril 10mg daily and Aspirin 81mg daily."
 
                         {/* Adherence Coaching */}
                         {result.coaching && (
-                            <div style={{ marginBottom: 'var(--space-lg)' }}>
-                                <h4>Personalized Patient Coaching</h4>
+                            <div style={{ marginTop: '2rem' }}>
+                                <h4 style={{ marginBottom: '1.5rem' }}>Personalized Patient Coaching</h4>
                                 <div className="grid grid-2">
                                     {result.coaching.map((card, i) => (
-                                        <div key={i} className="card" style={{ borderLeft: `4px solid ${card.importance === 'high' ? 'var(--danger-500)' : 'var(--primary-500)'}` }}>
-                                            <p style={{ fontWeight: 600, color: 'var(--primary-500)', marginBottom: 'var(--space-xs)' }}>
-                                                {card.medication}
+                                        <div key={i} className="result-item" style={{ borderLeft: `4px solid ${card.importance === 'high' ? 'var(--accent)' : 'var(--primary)'}` }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                                <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '1.1rem' }}>
+                                                    {card.medication}
+                                                </span>
+                                                <span className={`badge ${card.importance === 'high' ? 'badge-danger' : 'badge-warning'}`}>
+                                                    {card.importance} priority
+                                                </span>
+                                            </div>
+                                            <p style={{ fontSize: '0.95rem', color: 'var(--text-dim)', marginBottom: '1rem', lineHeight: 1.5 }}>
+                                                {card.message}
                                             </p>
-                                            <p style={{ fontSize: '0.9rem', marginBottom: 'var(--space-sm)' }}>{card.message}</p>
                                             <span className="badge badge-success">{card.timing}</span>
                                         </div>
                                     ))}

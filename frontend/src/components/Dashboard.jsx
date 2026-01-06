@@ -8,6 +8,9 @@ export default function Dashboard() {
         prescriptionsScanned: 892,
         interactionsChecked: 534
     })
+    const [auditLogs, setAuditLogs] = useState([])
+    const [showLogs, setShowLogs] = useState(false)
+    const [loadingLogs, setLoadingLogs] = useState(false)
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -19,6 +22,19 @@ export default function Dashboard() {
         }, 5000)
         return () => clearInterval(interval)
     }, [])
+
+    const fetchLogs = async () => {
+        setLoadingLogs(true)
+        setShowLogs(true)
+        try {
+            const logs = await api.getAuditLogs()
+            setAuditLogs(logs)
+        } catch (err) {
+            console.error('Failed to fetch audit logs:', err)
+        } finally {
+            setLoadingLogs(false)
+        }
+    }
 
     const features = [
         {
@@ -165,8 +181,50 @@ export default function Dashboard() {
                         </div>
                     </div>
                 </div>
-                <button className="btn-primary">View Global Audit Log</button>
+                <button className="btn-primary" onClick={fetchLogs}>View Global Audit Log</button>
             </div>
+
+            {/* Audit Log Modal */}
+            {showLogs && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                    background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)',
+                    zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '2rem'
+                }}>
+                    <div className="glass-card fade-in" style={{
+                        width: '100%', maxWidth: '800px', maxHeight: '80vh',
+                        overflow: 'hidden', display: 'flex', flexDirection: 'column',
+                        background: 'var(--bg-card)'
+                    }}>
+                        <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Global Audit Log</h2>
+                            <button className="tab-button" onClick={() => setShowLogs(false)}>Close</button>
+                        </div>
+                        <div style={{ padding: '2rem', overflowY: 'auto', flex: 1 }}>
+                            {loadingLogs ? (
+                                <p style={{ textAlign: 'center', color: 'var(--text-dim)' }}>Fetching latest logs...</p>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    {auditLogs.map(log => (
+                                        <div key={log.id} className="result-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                                <div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>{log.action}</div>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>
+                                                    {log.timestamp} • User: {log.user}
+                                                </div>
+                                            </div>
+                                            <span className={`badge ${log.status === 'Success' ? 'badge-success' : 'badge-warning'}`}>
+                                                {log.status}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
