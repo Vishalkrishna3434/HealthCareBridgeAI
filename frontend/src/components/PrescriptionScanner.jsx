@@ -53,7 +53,7 @@ export default function PrescriptionScanner() {
             const data = await api.scanPrescription(selectedFile)
             setResult(data)
         } catch (err) {
-            setError(err.message)
+            setError(err.message || String(err))
         } finally {
             setLoading(false)
         }

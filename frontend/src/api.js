@@ -16,23 +16,23 @@ const apiRequest = async (service, endpoint, options = {}) => {
     try {
         const response = await fetch(url, { ...options, headers });
         if (!response.ok) {
-            let errorMessage;
+            let errorMessage = `API Error ${response.status}: ${response.statusText}`;
             try {
                 const errorData = await response.json();
-                errorMessage = errorData.detail || errorData.message || JSON.stringify(errorData);
+                // Pick the best available error message string
+                const rawDetail = errorData.detail || errorData.message || errorData.error;
+                errorMessage = typeof rawDetail === 'string' ? rawDetail : JSON.stringify(rawDetail || errorData);
             } catch (e) {
-                errorMessage = await response.text().catch(() => `Request failed with status ${response.status}`);
-            }
-
-            if (typeof errorMessage === 'object') {
-                errorMessage = JSON.stringify(errorMessage);
+                try {
+                    const text = await response.text();
+                    if (text) errorMessage = text;
+                } catch (e2) { }
             }
             throw new Error(errorMessage);
         }
         return await response.json();
     } catch (error) {
-        console.error(`API Error (${service}):`, error);
-        // Ensure we throw an Error object with a string message
+        console.error(`Fetch failure (${service}):`, error);
         if (error instanceof Error) throw error;
         throw new Error(typeof error === 'string' ? error : JSON.stringify(error));
     }

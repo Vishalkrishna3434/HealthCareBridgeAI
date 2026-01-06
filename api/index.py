@@ -23,8 +23,10 @@ async def root():
 
 # Configure Gemini
 api_key = os.getenv("GOOGLE_API_KEY", "")
-if api_key:
+if api_key and not api_key.startswith("your-"):
     genai.configure(api_key=api_key)
+else:
+    api_key = None # Force mock mode
 
 # Database Mock (In-memory for demo)
 class MockDB:

@@ -25,7 +25,7 @@ export default function MedicationManager() {
             const data = await api.getMedications()
             setMedications(data)
         } catch (err) {
-            setError('Failed to load medications: ' + err.message)
+            setError(err.message || String(err))
         } finally {
             setLoading(false)
         }
@@ -41,7 +41,7 @@ export default function MedicationManager() {
             setFormData({ name: '', dosage: '', frequency: '' })
             setShowAddForm(false)
         } catch (err) {
-            setError('Failed to add medication: ' + err.message)
+            setError(err.message || String(err))
         } finally {
             setLoading(false)
         }
@@ -59,7 +59,7 @@ export default function MedicationManager() {
             alert(`${med.name}: Adherence logged as ${status.toUpperCase()}`)
             loadMedications() // Refresh logs if we had a list, but at least refresh stats
         } catch (err) {
-            setError('Failed to log adherence: ' + err.message)
+            setError(String(err.message || err))
         }
     }
 
@@ -72,7 +72,7 @@ export default function MedicationManager() {
             await api.deleteMedication(medId)
             await loadMedications()
         } catch (err) {
-            setError('Failed to delete medication: ' + err.message)
+            setError(err.message || String(err))
         } finally {
             setLoading(false)
         }

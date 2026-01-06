@@ -23,14 +23,18 @@ function App() {
       const results = {};
 
       for (const service of services) {
-        const status = await api.checkHealth(service);
-        results[service] = status.status === 'healthy' ? 'healthy' : 'error';
+        try {
+          const status = await api.checkHealth(service);
+          results[service] = status.status === 'healthy' ? 'healthy' : 'error';
+        } catch (e) {
+          results[service] = 'error';
+        }
       }
 
       setServiceStatus(results);
     };
 
-    checkServices()
+    checkServices();
   }, [])
 
   const tabs = [
