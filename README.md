@@ -1,3 +1,4 @@
+git status
 # 🏥 HealthBridge AI
 
 HealthBridge AI is a state-of-the-art healthcare intelligence platform designed to bridge the gap between clinical documentation and patient care. Using advanced AI (Google Gemini), it transforms messy clinical notes and handwritten prescriptions into structured, actionable medical data.
@@ -63,3 +64,5 @@ HealthBridge AI is a state-of-the-art healthcare intelligence platform designed 
 
 ## 📜 License
 Internal use only for TechSprint.
+Drug Interaction Checker feature in progress.
+
