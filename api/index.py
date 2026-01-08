@@ -5,7 +5,20 @@ from typing import Optional, List, Dict, Any
 import os
 import json
 import google.generativeai as genai
+import google.generativeai as genai
+from passlib.context import CryptContext
+from jose import JWTError, jwt
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import Depends, status
+from datetime import datetime, timedelta
 
+# Auth Config
+SECRET_KEY = "healthbridge-ai-super-secret-key-change-in-production"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 app = FastAPI()
 
 app.add_middleware(
@@ -25,7 +38,7 @@ async def root():
 # EMERGENCY: Hardcoding key per user "at any cost" request to bypass Vercel env delays
 api_key = os.getenv("GOOGLE_API_KEY", "").strip()
 if not api_key or api_key.startswith("your-") or len(api_key) < 10:
-    api_key = "AIzaSyDaHd56SunsT-k8_dpztRSK65kCqFzvBYg"
+    api_key = "AIzaSyAgeu7DAt8JRZADiVXKbwfYxoAQVLqfMzA"
 
 try:
     if api_key:
@@ -37,25 +50,71 @@ except Exception as e:
     print(f"Error configuring Gemini: {e}")
     api_key = None
 
-# Database Mock (In-memory for demo)
-class MockDB:
-    def __init__(self):
-        self.medications = [
-            {"id": "1", "name": "Metformin", "dosage": "500mg", "frequency": "Daily"},
-            {"id": "2", "name": "Lisinopril", "dosage": "10mg", "frequency": "Daily"}
-        ]
-        self.adherence = []
-        self.audit_logs = [
-            {"id": "a1", "timestamp": "2026-01-06T10:00:00Z", "action": "Note Analysis", "user": "Dr. Smith", "status": "Success"},
-            {"id": "a2", "timestamp": "2026-01-06T10:15:00Z", "action": "Prescription OCR", "user": "Scanner-01", "status": "Success"},
-            {"id": "a3", "timestamp": "2026-01-06T10:30:00Z", "action": "Interaction Check", "user": "Dr. Smith", "status": "Warning"},
-        ]
+from sqlalchemy.orm import Session
+from . import models, database
 
-db = MockDB()
+models.Base.metadata.create_all(bind=database.engine)
+
+def get_db():
+    db = database.SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# Auth Models
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    full_name: str
+
+class User(BaseModel):
+    username: str
+    full_name: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+# Auth Helpers
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    
+    user = db.query(models.User).filter(models.User.username == username).first()
+    if user is None:
+        raise credentials_exception
+    return user
 
 # Models
 class ClinicalNote(BaseModel):
-    patient_id: str
+    patient_id: Optional[str] = None
     note_text: str
     note_date: Optional[str] = None
 
@@ -68,6 +127,50 @@ class Medication(BaseModel):
     frequency: str
 
 # Endpoints
+
+# Auth Endpoints
+@app.post("/api/auth/register", response_model=Token)
+async def register(user: UserCreate, db: Session = Depends(get_db)):
+    db_user = db.query(models.User).filter(models.User.username == user.username).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Username already registered")
+    
+    hashed_password = get_password_hash(user.password)
+    new_user = models.User(
+        username=user.username,
+        password_hash=hashed_password,
+        full_name=user.full_name
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.post("/api/auth/login", response_model=Token)
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.username == form_data.username).first()
+    if not user or not verify_password(form_data.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/api/auth/me", response_model=User)
+async def read_users_me(current_user: models.User = Depends(get_current_user)):
+    return {"username": current_user.username, "full_name": current_user.full_name}
+
 @app.get("/api/health")
 @app.get("/api/clinical/health")
 @app.get("/api/patient/health")
@@ -76,57 +179,72 @@ async def health_check():
     return {"status": "healthy", "service": "consolidated-api"}
 
 @app.get("/api/audit-log")
-async def get_audit_logs():
-    return db.audit_logs
+async def get_audit_logs(db: Session = Depends(get_db)):
+    return db.query(models.AuditLog).order_by(models.AuditLog.timestamp.desc()).all()
 
 @app.get("/api/medications")
-async def get_medications():
-    return db.medications
+async def get_medications(db: Session = Depends(get_db)):
+    return db.query(models.Medication).all()
 
 @app.post("/api/medications")
-async def add_medication(med: Medication):
-    import uuid
-    med_dict = med.dict()
-    med_dict["id"] = str(uuid.uuid4())
-    db.medications.append(med_dict)
-    return {"status": "success", "data": med_dict}
+async def add_medication(med: Medication, db: Session = Depends(get_db)):
+    new_med = models.Medication(
+        name=med.name,
+        dosage=med.dosage,
+        frequency=med.frequency
+    )
+    db.add(new_med)
+    db.commit()
+    db.refresh(new_med)
+    return {"status": "success", "data": new_med}
 
 @app.delete("/api/medications/{med_id}")
-async def delete_medication(med_id: str):
-    initial_len = len(db.medications)
-    db.medications = [m for m in db.medications if m["id"] != med_id]
-    if len(db.medications) == initial_len:
+async def delete_medication(med_id: str, db: Session = Depends(get_db)):
+    med = db.query(models.Medication).filter(models.Medication.id == med_id).first()
+    if not med:
         raise HTTPException(status_code=404, detail="Medication not found")
+    db.delete(med)
+    db.commit()
     return {"status": "success"}
 
 @app.post("/api/adherence")
-async def log_adherence(data: Dict[str, Any]):
-    db.adherence.append(data)
+async def log_adherence(data: Dict[str, Any], db: Session = Depends(get_db)):
+    # Log adherence
+    new_adherence = models.AdherenceLog(
+        medication_id=data.get("medication_id"),
+        status=data.get("status"),
+        timestamp=data.get("timestamp", datetime.utcnow().isoformat())
+    )
+    db.add(new_adherence)
+    
     # Add to audit log too
-    db.audit_logs.insert(0, {
-        "id": os.urandom(4).hex(),
-        "timestamp": data.get("timestamp", "Just now"),
-        "action": f"Adherence Log: {data.get('medication_id')}",
-        "user": "System",
-        "status": data.get("status", "Logged")
-    })
+    new_audit = models.AuditLog(
+        action=f"Adherence Log: {data.get('medication_id')}",
+        user="System",
+        status=data.get("status", "Logged")
+    )
+    db.add(new_audit)
+    db.commit()
     return {"status": "success"}
 
 @app.post("/api/analyze-note")
-async def analyze_note(note: ClinicalNote):
-    db.audit_logs.insert(0, {
-        "id": os.urandom(4).hex(),
-        "timestamp": "Just now",
-        "action": "Clinical Note Analysis",
-        "user": "Web Client",
-        "status": "Success"
-    })
+async def analyze_note(note: ClinicalNote, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    new_audit = models.AuditLog(
+        action="Clinical Note Analysis",
+        user=current_user.username,
+        status="Success"
+    )
+    db.add(new_audit)
+    db.commit()
+    
+    # Use username as patient_id
+    patient_id = current_user.username
     
     if not api_key:
-        return get_mock_analysis(note.patient_id, note.note_text)
+        return get_mock_analysis(patient_id, note.note_text)
     
     try:
-        model = genai.GenerativeModel('gemini-1.5-pro-latest')
+        model = genai.GenerativeModel('gemini-pro')
         prompt = f"""
         Analyze this clinical note and extract structured medical data.
         Note: {note.note_text}
@@ -179,14 +297,14 @@ async def analyze_note(note: ClinicalNote):
         return get_mock_analysis(note.patient_id, note.note_text)
 
 @app.post("/api/scan-prescription")
-async def scan_prescription(file: UploadFile = File(...)):
-    db.audit_logs.insert(0, {
-        "id": os.urandom(4).hex(),
-        "timestamp": "Just now",
-        "action": "Prescription OCR Scan",
-        "user": "Web Client",
-        "status": "Success"
-    })
+async def scan_prescription(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    new_audit = models.AuditLog(
+        action="Prescription OCR Scan",
+        user="Web Client",
+        status="Success"
+    )
+    db.add(new_audit)
+    db.commit()
     
     if not api_key:
         return {
@@ -199,7 +317,7 @@ async def scan_prescription(file: UploadFile = File(...)):
     
     try:
         content = await file.read()
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-pro')
         
         prompt = """
         Analyze this prescription image. 
@@ -230,14 +348,14 @@ async def scan_prescription(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Failed to scan prescription: {str(e)}")
 
 @app.post("/api/check-interactions")
-async def check_interactions(req: MedicationsRequest):
-    db.audit_logs.insert(0, {
-        "id": os.urandom(4).hex(),
-        "timestamp": "Just now",
-        "action": "Drug Interaction Check",
-        "user": "Web Client",
-        "status": "Success"
-    })
+async def check_interactions(req: MedicationsRequest, db: Session = Depends(get_db)):
+    new_audit = models.AuditLog(
+        action="Drug Interaction Check",
+        user="Web Client",
+        status="Success"
+    )
+    db.add(new_audit)
+    db.commit()
     
     if not api_key:
         # Better mock interactions
@@ -255,7 +373,7 @@ async def check_interactions(req: MedicationsRequest):
         }
     
     try:
-        model = genai.GenerativeModel('gemini-1.5-pro-latest')
+        model = genai.GenerativeModel('gemini-pro')
         prompt = f"""
         Check for drug-drug interactions between these medications: {', '.join(req.medications)}.
         
@@ -269,6 +387,18 @@ async def check_interactions(req: MedicationsRequest):
                     "mechanism": "Brief scientific reason for interaction",
                     "recommendation": "Clinical advice for the provider"
                 }}
+            ],
+            "food_interactions": [
+                {{
+                    "medication": "...",
+                    "food": "...",
+                    "effect": "...",
+                    "recommendation": "..."
+                }}
+            ],
+            "lifestyle_recommendations": [
+                "Recommendation 1",
+                "Recommendation 2"
             ],
             "warnings": ["General safety warning 1", "General safety warning 2"]
         }}

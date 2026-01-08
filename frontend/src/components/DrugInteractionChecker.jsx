@@ -182,6 +182,34 @@ export default function DrugInteractionChecker() {
                                     </ul>
                                 </div>
                             )}
+
+                            {result.food_interactions && result.food_interactions.length > 0 && (
+                                <div style={{ marginTop: 'var(--space-lg)' }}>
+                                    <h4 style={{ color: 'var(--text-primary)', marginBottom: 'var(--space-md)' }}>🍎 Food & Lifestyle Interactions</h4>
+                                    <div className="grid" style={{ gap: 'var(--space-md)' }}>
+                                        {result.food_interactions.map((item, index) => (
+                                            <div key={index} className="glass-card" style={{ padding: 'var(--space-md)', background: 'rgba(255, 255, 255, 0.03)' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-xs)' }}>
+                                                    <strong>{item.medication} + {item.food}</strong>
+                                                </div>
+                                                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-xs)' }}>{item.effect}</p>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--primary-400)' }}>💡 {item.recommendation}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {result.lifestyle_recommendations && result.lifestyle_recommendations.length > 0 && (
+                                <div style={{ marginTop: 'var(--space-lg)' }}>
+                                    <h4 style={{ color: 'var(--text-primary)', marginBottom: 'var(--space-md)' }}>🧘 Lifestyle Recommendations</h4>
+                                    <ul style={{ margin: '0 0 0 var(--space-lg)', color: 'var(--text-secondary)' }}>
+                                        {result.lifestyle_recommendations.map((rec, index) => (
+                                            <li key={index} style={{ marginBottom: 'var(--space-xs)' }}>{rec}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div className="result-section">

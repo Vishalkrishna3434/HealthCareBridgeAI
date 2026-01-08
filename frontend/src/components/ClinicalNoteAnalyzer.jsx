@@ -3,7 +3,6 @@ import { api } from '../api'
 
 export default function ClinicalNoteAnalyzer() {
     const [formData, setFormData] = useState({
-        patientId: '',
         noteText: '',
         noteDate: ''
     })
@@ -19,7 +18,6 @@ export default function ClinicalNoteAnalyzer() {
 
         try {
             const data = await api.analyzeNote({
-                patient_id: formData.patientId,
                 note_text: formData.noteText,
                 note_date: formData.noteDate || null
             })
@@ -75,17 +73,7 @@ export default function ClinicalNoteAnalyzer() {
             <div className="glass-card" style={{ padding: '2rem' }}>
                 <form onSubmit={handleSubmit} className="form-container">
                     <div className="form-row">
-                        <div className="form-group">
-                            <label htmlFor="patientId">Patient ID *</label>
-                            <input
-                                id="patientId"
-                                type="text"
-                                required
-                                placeholder="e.g., PT-12345"
-                                value={formData.patientId}
-                                onChange={(e) => setFormData({ ...formData, patientId: e.target.value })}
-                            />
-                        </div>
+                        {/* Patient ID removed - using logged in user */}
 
                         <div className="form-group">
                             <label htmlFor="noteDate">Note Date</label>

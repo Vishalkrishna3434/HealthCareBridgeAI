@@ -64,3 +64,5 @@ HealthBridge AI is a state-of-the-art healthcare intelligence platform designed 
 
 ## 📜 License
 Internal use only for TechSprint.
+Drug Interaction Checker feature in progress.
+

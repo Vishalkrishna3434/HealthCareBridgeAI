@@ -5,3 +5,7 @@ pydantic
 python-multipart
 requests
 python-dotenv
+python-jose[cryptography]
+passlib[argon2]
+argon2-cffi
+sqlalchemy

@@ -4,8 +4,9 @@ const apiRequest = async (service, endpoint, options = {}) => {
     const baseUrl = config[`${service.toUpperCase()}_SERVICE_URL`];
     const url = `${baseUrl}${endpoint}`;
 
+    const token = localStorage.getItem('token');
     const headers = {
-        'Authorization': 'Bearer valid_token',
+        'Authorization': token ? `Bearer ${token}` : '',
         ...options.headers,
     };
 
@@ -39,6 +40,16 @@ const apiRequest = async (service, endpoint, options = {}) => {
 };
 
 export const api = {
+    // Auth
+    login: async (username, password) => {
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('password', password);
+        return apiRequest('patient', '/auth/login', { method: 'POST', body: formData });
+    },
+    register: (username, password, full_name) => apiRequest('patient', '/auth/register', { method: 'POST', body: JSON.stringify({ username, password, full_name }) }),
+    getMe: () => apiRequest('patient', '/auth/me'),
+
     // Patient Service
     getMedications: () => apiRequest('patient', '/medications'),
     addMedication: (data) => apiRequest('patient', '/medications', { method: 'POST', body: JSON.stringify(data) }),
